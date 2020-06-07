@@ -50,17 +50,17 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
+  
+  // start in lane 1;
+  int lane = 1;
+
+  // Have a reference velocity to target
+  double ref_vel = 0.0; // mph
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy]
+               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
-    // start in lane 1;
-    int lane = 1;
-
-    // Have a reference velocity to target
-    double ref_vel = 49.5; // mph
-
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -106,6 +106,41 @@ int main() {
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
+
+          if (prev_size > 0) {
+            car_s = end_path_s;
+          }
+
+          bool too_close = false;
+          int d_cur_lane = 2 + 4 * lane;
+
+          // find ref_v to use
+          for (int i = 0; i < sensor_fusion.size(); i++) {
+            // car is in my lane
+            float d = sensor_fusion[i][6];
+            if (d < (d_cur_lane+2) && d > (d_cur_lane-2)) {
+              double vx = sensor_fusion[i][3];
+              double vy = sensor_fusion[i][4];
+              double check_speed = sqrt(vx*vx+vy*vy);
+              double check_car_s = sensor_fusion[i][5];
+
+              check_car_s += ((double)prev_size*.02*check_speed);
+              if ((check_car_s > car_s) && ((check_car_s-car_s) < 30)) {
+                // Do some logic here, lower reference velocity so we dont crash into the car infront of us
+                // ref_vel = 29.5;
+                too_close = true;
+                if (lane > 0) {
+                  lane = 0;
+                }
+              }
+            }
+          }
+
+          if (too_close) {
+            ref_vel -= .224;
+          } else if (ref_vel < 49.5) {
+            ref_vel += .224;
+          }
 
           vector<double> ptsx;
           vector<double> ptsy;
