@@ -8,6 +8,7 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
+#include "behavior_planning.h"
 
 // for convenience
 using nlohmann::json;
@@ -57,8 +58,11 @@ int main() {
   // Have a reference velocity to target
   double ref_vel = 0.0; // mph
 
+  // initial state is Keep Lane.
+  string state = "KL";
+
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel]
+               &map_waypoints_dx,&map_waypoints_dy, &lane, &ref_vel, &state]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -93,7 +97,7 @@ int main() {
 
           // Sensor Fusion Data, a list of all other cars on the same side 
           //   of the road.
-          auto sensor_fusion = j[1]["sensor_fusion"];
+          vector< vector<double> > sensor_fusion = j[1]["sensor_fusion"];
 
           int prev_size = previous_path_x.size();
 
@@ -114,27 +118,37 @@ int main() {
           bool too_close = false;
           int d_cur_lane = 2 + 4 * lane;
 
-          // find ref_v to use
-          for (int i = 0; i < sensor_fusion.size(); i++) {
-            // car is in my lane
-            float d = sensor_fusion[i][6];
-            if (d < (d_cur_lane+2) && d > (d_cur_lane-2)) {
-              double vx = sensor_fusion[i][3];
-              double vy = sensor_fusion[i][4];
-              double check_speed = sqrt(vx*vx+vy*vy);
-              double check_car_s = sensor_fusion[i][5];
-
-              check_car_s += ((double)prev_size*.02*check_speed);
-              if ((check_car_s > car_s) && ((check_car_s-car_s) < 30)) {
-                // Do some logic here, lower reference velocity so we dont crash into the car infront of us
-                // ref_vel = 29.5;
-                too_close = true;
-                if (lane > 0) {
-                  lane = 0;
-                }
-              }
+          BehaviorPlanner planner = BehaviorPlanner(sensor_fusion);
+          too_close = planner.isLeadVehicleTooClose(car_s, d_cur_lane, prev_size);
+          if (too_close) {
+            //TODO(Yaboo)
+            vector<string> states = planner.getAvailableStates(state);
+            if (lane > 0) {
+              lane = 0;
             }
           }
+
+          // // find ref_v to use
+          // for (int i = 0; i < sensor_fusion.size(); i++) {
+          //   // car is in my lane
+          //   double d = sensor_fusion[i][6];
+          //   if (d < (d_cur_lane+2) && d > (d_cur_lane-2)) {
+          //     double vx = sensor_fusion[i][3];
+          //     double vy = sensor_fusion[i][4];
+          //     double check_speed = sqrt(vx*vx+vy*vy);
+          //     double check_car_s = sensor_fusion[i][5];
+
+          //     check_car_s += ((double)prev_size*.02*check_speed);
+          //     if ((check_car_s > car_s) && ((check_car_s-car_s) < 30)) {
+          //       // Do some logic here, lower reference velocity so we dont crash into the car infront of us
+          //       // ref_vel = 29.5;
+          //       too_close = true;
+          //       if (lane > 0) {
+          //         lane = 0;
+          //       }
+          //     }
+          //   }
+          // }
 
           if (too_close) {
             ref_vel -= .224;
@@ -147,12 +161,6 @@ int main() {
           double ref_x = car_x;
           double ref_y = car_y;
           double ref_yaw = deg2rad(car_yaw);
-
-          std::cout << "ref_x: " << ref_x << std::endl;
-          std::cout << "ref_y: " << ref_y << std::endl;
-          std::cout << "car_yaw: " << car_yaw << std::endl;
-          std::cout << "ref_yaw: " << ref_yaw << std::endl;
-          std::cout << "prev_size: " << prev_size << std::endl;
 
           if (prev_size < 2) {
             //Use two points that make the path tangent to the car
@@ -219,7 +227,7 @@ int main() {
           double target_x = 30.0;
           double target_y = s(target_x);
           double target_dist = sqrt((target_x * target_x) + (target_y * target_y));
-          std::cout << target_x << "," << target_y << "," << target_dist << std::endl;
+          // std::cout << target_x << "," << target_y << "," << target_dist << std::endl;
           double x_add_on = 0.0;
           for (int i = 0; i <= 50-previous_path_x.size(); i++) {
             double N = (target_dist/(.02*ref_vel/2.24));
@@ -243,10 +251,10 @@ int main() {
             next_y_vals.push_back(y_point);
           }
 
-          for (int i = 0; i < next_x_vals.size(); i++) {
-            std::cout << next_x_vals[i] << ",";
-          }
-          std::cout << std::endl;
+          // for (int i = 0; i < next_x_vals.size(); i++) {
+          //   std::cout << next_x_vals[i] << ",";
+          // }
+          // std::cout << std::endl;
 
           // double dist_inc = 0.5;
           // for (int i = 0; i < 50; ++i) {
