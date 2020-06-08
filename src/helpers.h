@@ -1,9 +1,12 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+#include <iostream>
 #include <math.h>
 #include <string>
 #include <vector>
+#include <iterator>
+#include <algorithm>
 
 // for convenience
 using std::string;
@@ -152,6 +155,12 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s,
   double y = seg_y + d*sin(perp_heading);
 
   return {x,y};
+}
+
+template<typename T>
+void printVector(const T& t) {
+  std::copy(t.cbegin(), t.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
+  std::cout << std::endl;
 }
 
 #endif  // HELPERS_H

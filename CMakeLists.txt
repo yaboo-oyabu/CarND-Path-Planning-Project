@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
-set(sources src/main.cpp)
+set(sources src/main.cpp src/behavior_planner.cpp)
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 

@@ -8,7 +8,7 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
-#include "behavior_planning.h"
+#include "behavior_planner.h"
 
 // for convenience
 using nlohmann::json;
@@ -122,7 +122,8 @@ int main() {
           too_close = planner.isLeadVehicleTooClose(car_s, d_cur_lane, prev_size);
           if (too_close) {
             //TODO(Yaboo)
-            vector<string> states = planner.getAvailableStates(state);
+            vector<string> states = planner.getAvailableStates(state, lane);
+            printVector(states);
             if (lane > 0) {
               lane = 0;
             }
