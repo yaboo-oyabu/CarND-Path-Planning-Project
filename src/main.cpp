@@ -116,8 +116,9 @@ int main() {
               car_x, car_y, car_s, car_d, car_yaw, car_speed,
               previous_path_x, previous_path_y, map_waypoints_x,
               map_waypoints_y, map_waypoints_s, sensor_fusion);
-              
-          planner.getTrajectory(lane, state, ref_vel, next_x_vals, next_y_vals);
+                        
+          // Calculate next paths based on sensor_fusion and previous_path_(x|y)
+          planner.getTrajectory(state, lane, ref_vel, next_x_vals, next_y_vals);
 
           ///////////////////////////////////////////////////////////////////////////
           ///////////////////////////////////////////////////////////////////////////

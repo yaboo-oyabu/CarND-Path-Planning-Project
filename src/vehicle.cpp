@@ -7,9 +7,9 @@
 using std::string;
 using std::vector;
 
-/*
- * Ego Vehicle
- */
+/////////////////////////////////////////////////////////////////////////////////
+// EGO Vehicle
+/////////////////////////////////////////////////////////////////////////////////
 Ego::Ego(double x, double y, double s, double d, double yaw, double speed,
          const vector<double> &previous_path_x, const vector<double> &previous_path_y, 
          const vector<double> &map_waypoints_x, const vector<double> &map_waypoints_y,
@@ -28,8 +28,10 @@ Ego::Ego(double x, double y, double s, double d, double yaw, double speed,
   this->prev_size = previous_path_x.size();
 }
 
-void Ego::generateTrajectory(int target_lane, double target_velocity,
-                             vector<double> &next_x_vals, vector<double> &next_y_vals) {
+void Ego::generateTrajectory(const int &target_lane,
+                             const double &target_velocity,
+                             vector<double> &trajectory_x,
+                             vector<double> &trajectory_y) {
   // int target_lane, double target_distance, ...
 
   vector<double> points_x;
@@ -93,8 +95,8 @@ void Ego::generateTrajectory(int target_lane, double target_velocity,
 
   // Start with all of the previous path points from last time.
   for (int i = 0; i < this->prev_size; i++) {
-    next_x_vals.push_back(this->previous_path_x[i]);
-    next_y_vals.push_back(this->previous_path_y[i]);
+    trajectory_x.push_back(this->previous_path_x[i]);
+    trajectory_y.push_back(this->previous_path_y[i]);
   }
 
   double target_x = 30.0;
@@ -119,15 +121,18 @@ void Ego::generateTrajectory(int target_lane, double target_velocity,
     y_point += ref_y;
 
     // std::cout << i << ": " << x_point << ", " << y_point << std::endl;
-    next_x_vals.push_back(x_point);
-    next_y_vals.push_back(y_point);
+    trajectory_x.push_back(x_point);
+    trajectory_y.push_back(y_point);
   }
 }
 
-/*
- * Ado Vehicle
- */
-Ado::Ado(double id, double x, double y, double s, double d, double vx, double vy){
+/////////////////////////////////////////////////////////////////////////////////
+// ADO Vehicle
+/////////////////////////////////////////////////////////////////////////////////
+Ado::Ado(double id, double x, double y, double vx, double vy, double s, double d, 
+         const vector<double> &map_waypoints_s,
+         const vector<double> &map_waypoints_x,
+         const vector<double> &map_waypoints_y){
   this->id = id;
   this->x = x;
   this->y = y;
@@ -136,4 +141,19 @@ Ado::Ado(double id, double x, double y, double s, double d, double vx, double vy
   this->vx = vx;
   this->vy = vy;
   this->v = sqrt(pow(vx, 2) + pow(vy, 2));
+  this->map_waypoints_s = map_waypoints_s;
+  this->map_waypoints_x = map_waypoints_x;
+  this->map_waypoints_y = map_waypoints_y;
+}
+
+void Ado::predictPosition(int num_steps){
+  this->next_s = this->s + ((double) num_steps * kSimInterval * this->v);
+  this->next_d = this->d;
+
+  vector<double> ado_xy = getXY(
+      this->next_s, this->next_d,
+      this->map_waypoints_s, this->map_waypoints_x, this->map_waypoints_y);
+
+  this->next_x = ado_xy[0];
+  this->next_y = ado_xy[1];
 }

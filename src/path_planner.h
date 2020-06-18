@@ -13,6 +13,12 @@ using std::vector;
 using std::string;
 using std::map;
 
+
+const double kDistanceThreshold = 30.0;
+const int kNumAvailableLanes = 3;
+const float kCollisionWeight = 1.0;
+const float kInefficiencyWeight = 0.5;
+
 class PathPlanner {
  public:
   PathPlanner(
@@ -24,12 +30,21 @@ class PathPlanner {
 
   ~PathPlanner() {};
 
-  bool isLeadVehicleTooClose(int current_lane);
-  vector<string> getAvailableStates(int current_lane, string state);
-  void getTrajectory(int &current_lane, string &state, double &current_velocity,
+  void getTrajectory(string &state, int &current_lane, double &current_velocity,
                      vector<double> &next_x_vals, vector<double> &next_y_vals);
 
+
  private:
+  bool isLeadVehicleTooClose(int current_lane);
+  vector<string> getPossibleStates(int current_lane, string state);
+  float calculateCost(
+      const int &target_lane, const double &target_velocity,
+      const vector<double> &points_x, const vector<double> &points_y);
+  float calculateCollisionCost(
+      const vector<double> &points_x, const vector<double> &points_y);
+  float calculateInefficiencyCost(
+      const vector<double> &points_x, const vector<double> &points_y);
+
   Ego ego;
   map<int, Ado> ados;
 };
