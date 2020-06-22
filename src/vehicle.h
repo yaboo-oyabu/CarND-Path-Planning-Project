@@ -22,8 +22,8 @@ class Ego {
       const vector<double> &map_waypoints_x,
       const vector<double> &map_waypoints_y,
       const vector<double> &map_waypoints_s);
-  Ego(){};
-  ~Ego(){};
+  Ego() = default;
+  ~Ego() = default;
 
   void generateTrajectory(const int &target_lane,
                           const double &target_velocity,
@@ -58,8 +58,8 @@ class Ado {
       const vector<double> &map_waypoints_x,
       const vector<double> &map_waypoints_y,
       const vector<double> &map_waypoints_s);
-  Ado() {};
-  ~Ado() {};
+  Ado() = default;
+  ~Ado() = default;
 
   void predictPosition(int num_steps);
   
