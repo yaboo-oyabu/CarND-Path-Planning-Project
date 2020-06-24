@@ -30,20 +30,24 @@ class PathPlanner {
                      vector<double> &next_x_vals, vector<double> &next_y_vals);
 
  private:
-  // review relationship between these values.
-  const double kSpeedLimit = 50.0;
-  const double kMaxVelocity = 48.0;
-  const double kMaxAcceleration = 0.224;
-  const double kMaxDeceleration = 0.224;
-  const double kDistanceThreshold = 40.0;
-  const double kMinLaneChangeVelocity = 30.0;
-
-  const double kBufferVelocity = 2.0;
   const int kNumAvailableLanes = 3;
 
+  const double kVehicleSearchRange = 45.0;
+  const double kCollisionSearchRange = 30.0;
+  const double kCollisionDetectRange = 4.0;
+
+  const double kSpeedLimit = 50.0;
+  const double kMaxVelocity = 48.0;
+  const double kMinLaneChangeVelocity = 30.0;
+
+  // Need to change
+  const double kMaxAcceleration = 0.144;
+  const double kMaxDeceleration = 0.164;
+
+  const float kBufferVelocity = 2.0;
   const float kStopCost = 0.8;
   const float kSpeedWeight = 4.0;
-  const float kCollisionWeight = 5.0;
+  const float kCollisionWeight = 20.0;
   const float kStateWeight = 1.0;
   const float kTotalWeight = kSpeedWeight + kCollisionWeight + kStateWeight;
   
@@ -59,8 +63,8 @@ class PathPlanner {
   void execLaneChange(string curr_state, int curr_lane, double curr_velocity,
                       int &next_lane, double &next_velocity);
   void getKinematics(int &next_lane, double &curr_velocity, double &next_velocity);
-  bool getVehicleAhead(int curr_lane, Ado &ado_ahead);
-  bool getVehicleBehind(int curr_lane, Ado &ado_behind);
+  bool getVehicleAhead(int curr_lane, Vehicle &vehicle_ahead);
+  bool getVehicleBehind(int curr_lane, Vehicle &vehicle_behind);
 
   float calculateCost(
       const string &curr_state, const int &next_lane, const double &next_velocity,
@@ -72,8 +76,12 @@ class PathPlanner {
                                   const vector<double> &points_y);
   float calculateStateCost(const string &state);
 
-  Ego ego;
-  map<int, Ado> ados;
+  double calculateNextVelocity(double curr_velocity, double target_velocity);
+  double sigmoid(double x, double t, double a);
+  double inverse_sigmoid(double y, double t, double a);
+
+  Vehicle ego;
+  map<int, Vehicle> vehicles; // other vehicles
 };
 
 #endif // PATH_PLANNING_H

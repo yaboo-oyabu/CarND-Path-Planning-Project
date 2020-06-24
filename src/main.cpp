@@ -120,11 +120,10 @@ int main() {
               car_x, car_y, car_s, car_d, car_yaw, car_speed,
               previous_path_x, previous_path_y, map_waypoints_x,
               map_waypoints_y, map_waypoints_s, sensor_fusion);
-                        
+          
           // Calculate next paths based on sensor_fusion and previous_path_(x|y)
           planner.getTrajectory(
               curr_state, curr_lane, curr_velocity, next_x_vals, next_y_vals);
-
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
