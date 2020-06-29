@@ -12,6 +12,10 @@
 using std::string;
 using std::vector;
 
+const double kSimInterval = 0.02;
+const double kMpsToMph = 2.223694;
+const double kMphToMps = 0.44704;
+
 string hasData(string s);
 constexpr double pi();
 

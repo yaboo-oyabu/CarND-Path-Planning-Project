@@ -59,11 +59,12 @@ int main() {
   double curr_velocity = 0.0; // mph
 
   // initial state is Keep Lane.
-  string curr_state = "KL";
+  // string curr_state = "KL";
+  State curr_state = KL;
 
   h.onMessage(
-      [&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,
-      &map_waypoints_dy,&curr_lane, &curr_velocity, &curr_state]
+      [&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, &map_waypoints_dx,
+      &map_waypoints_dy, &curr_lane, &curr_velocity, &curr_state]
       (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -124,7 +125,9 @@ int main() {
           // Calculate next paths based on sensor_fusion and previous_path_(x|y)
           planner.getTrajectory(
               curr_state, curr_lane, curr_velocity, next_x_vals, next_y_vals);
-
+          // printVector(next_x_vals);
+          // printVector(next_y_vals);
+          
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
           
