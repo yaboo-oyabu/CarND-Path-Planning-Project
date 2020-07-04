@@ -34,7 +34,7 @@ class PathPlanner {
  private:
   const double kDelayCoef = 0.8;
   const int kNumAvailableLanes = 3;
-  const double kMaxVelMph = 48.0;
+  const double kMaxVelMph = 46.0;
   const double kMaxVelMps = kMaxVelMph * kMphToMps;
   const double kMaxAccMph = 0.244;
   const double kMaxAccMps = kMaxAccMph * kMphToMps;

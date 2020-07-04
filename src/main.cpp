@@ -95,13 +95,6 @@ int main() {
           json msgJson;
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-
-          /**
-           * TODO: define a path made up of (x,y) points that the car will visit
-           *   sequentially every .02 seconds
-           */
-
-          if (previous_path_x.size() > 0) car_s = end_path_s;
           
           // Initialize behavior planner.
           PathPlanner planner = PathPlanner(

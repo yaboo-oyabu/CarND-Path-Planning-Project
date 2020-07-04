@@ -71,10 +71,6 @@ void PathPlanner::generateTrajectory(
   curr_vel = next_vel;
 }
 
-///////////////////////////////////////////////////////////////////////////
-// Determine a next state with Finite State Machine.
-///////////////////////////////////////////////////////////////////////////
-
 State PathPlanner::getNextState(
     const State curr_state, const int curr_lane) {
   // Returns possible states based on current lane and state.
@@ -99,10 +95,6 @@ State PathPlanner::getNextState(
       break;
   }
 
-  // Debug information
-  std::cout << "curr_state: " << curr_state << ", "
-            << "next_state: " << next_state << std::endl;
-
   return next_state;
 }
 
@@ -122,14 +114,14 @@ vector< vector<int> > PathPlanner::getSurroundingVehicleInformation(int curr_lan
       }
     }
   }
-  // Debug output.
-  std::cout << "-- [curr_lane: " << curr_lane << "] --" << std::endl;
-  for (int i = 0; i < spaces.size(); i++){
-    for (int j = 0; j < spaces[0].size(); j++) {
-      std::cout << std::setw(3) << spaces[i][j];
-    }
-    std::cout << std::endl;
-  }
+
+  // For Debug information;
+  // for (int i = 0; i < spaces.size(); i++){
+  //   for (int j = 0; j < spaces[0].size(); j++) {
+  //     std::cout << std::setw(3) << spaces[i][j];
+  //   }
+  //   std::cout << std::endl;
+  // }
   return spaces;
 } 
 

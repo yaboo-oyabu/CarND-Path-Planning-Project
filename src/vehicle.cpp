@@ -91,10 +91,7 @@ void Vehicle::generateTrajectory(
     points_y.push_back(ref_y);
   }
 
-  ////////////////////////////////////////////////////////////
-  // lane change behavior is detemined by these 3 points.
-  ////////////////////////////////////////////////////////////
-  vector<double> next_wp0 = getXY(this->s+30, (2+4*target_lane), this->map_waypoints_s,
+  vector<double> next_wp0 = getXY(this->s+40, (2+4*target_lane), this->map_waypoints_s,
                                   this->map_waypoints_x, this->map_waypoints_y);
   vector<double> next_wp1 = getXY(this->s+60, (2+4*target_lane), this->map_waypoints_s,
                                   this->map_waypoints_x, this->map_waypoints_y);
