@@ -51,20 +51,15 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
-  
-  // start in lane 1;
+
+  // Ego's initial state;  
   int curr_lane = 1;
-
-  // Have a reference velocity to target
-  double curr_velocity = 0.0; // mph
-
-  // initial state is Keep Lane.
-  // string curr_state = "KL";
+  double curr_vel = 0.0; // mps
   State curr_state = KL;
 
   h.onMessage(
       [&map_waypoints_x, &map_waypoints_y, &map_waypoints_s, &map_waypoints_dx,
-      &map_waypoints_dy, &curr_lane, &curr_velocity, &curr_state]
+      &map_waypoints_dy, &curr_lane, &curr_vel, &curr_state]
       (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -87,7 +82,7 @@ int main() {
           double car_s = j[1]["s"];
           double car_d = j[1]["d"];
           double car_yaw = j[1]["yaw"];
-          double car_speed = j[1]["speed"];
+          double car_vel = j[1]["speed"];
 
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
@@ -100,12 +95,6 @@ int main() {
           // Sensor Fusion Data, a list of all other cars on the same side of the road.
           vector< vector<double> > sensor_fusion = j[1]["sensor_fusion"];
           json msgJson;
-
-
-          ///////////////////////////////////////////////////////////////////////////
-          ///////////////////////////////////////////////////////////////////////////
-          ///////////////////////////////////////////////////////////////////////////
-
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
@@ -118,25 +107,16 @@ int main() {
           
           // Initialize behavior planner.
           PathPlanner planner = PathPlanner(
-              car_x, car_y, car_s, car_d, car_yaw, car_speed,
+              car_x, car_y, car_s, car_d, car_yaw, car_vel,
               previous_path_x, previous_path_y, map_waypoints_x,
               map_waypoints_y, map_waypoints_s, sensor_fusion);
           
-          // Calculate next paths based on sensor_fusion and previous_path_(x|y)
-          planner.getTrajectory(
-              curr_state, curr_lane, curr_velocity, next_x_vals, next_y_vals);
-          // printVector(next_x_vals);
-          // printVector(next_y_vals);
+          // Genarete Trajectory;
+          planner.generateTrajectory(
+              curr_state, curr_lane, curr_vel, next_x_vals, next_y_vals);
           
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-          
-          ///////////////////////////////////////////////////////////////////////////
-          ///////////////////////////////////////////////////////////////////////////
-          ///////////////////////////////////////////////////////////////////////////
-
-
-
           auto msg = "42[\"control\","+ msgJson.dump()+"]";
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }  // end "telemetry" if

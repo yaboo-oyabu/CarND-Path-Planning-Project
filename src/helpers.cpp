@@ -154,9 +154,3 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s,
 
   return {x,y};
 }
-
-// template<typename T>
-// void printVector(const T& t) {
-//   std::copy(t.cbegin(), t.cend(), std::ostream_iterator<typename T::value_type>(std::cout, ", "));
-//   std::cout << std::endl;
-// }
