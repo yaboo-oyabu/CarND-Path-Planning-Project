@@ -143,3 +143,47 @@ still be compilable with cmake and make./
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
+--
+
+## Model Documentation
+
+I generated paths by the following steps:
+
+1. Selecting a next state with Finite State Machine
+2. Calculating information required to realize the movement in the next state
+3. Generating a final trajectory based on the information calculated in the above step 2
+
+### Selecting a Next State with FSM
+
+In the step 1, I defined 5 states: KL (Keep Lane), PLCL (Prepare Lane Change Left), LCL(Lane Change Left), PLCR (Prepare Lane Change Right), and LCR (Lane Change Right). I used Finite State Machine and traffic information around the ego vehicle to make transitions between these states. The following image shows the concept of traffic information in my submission code. 
+
+![Traffic information](images/trafficinfo.png)
+
+In every simulation tick (0.02 simulation seconds), traffic information (3x3 matrix in the above image) is calculated based on `sensor_fusion` information. In this traffic information, rows represent `s` ranges in Frenet coordinates, and columns are `d` ranges (or lanes), and values represent other vehicle's identifiers. You can find the concrete implementation in 
+`getSurroundingVehicleInformation` of `src/path_planner.cpp`. 
+
+![Finite State Machine](images/fsm.png)
+
+As shown in the image shown above, state transitions are defined with Finite State Machine. Each circle represents state, and arrows between states show the relationship between each states.
+
+* KL1: if Both KL2 and KL3 are `false`.
+* KL2: if there is a preceding vehicle (`trafficInfo[1][0] == 0 && trafficInfo[1][1] == 0`), a left lane is available (`trafficInfo[0][0] != -1`), and no vehicle on the left ahead of the ego vehicle (`trafficInfo[0][0] == 0 && trafficInfo[0][1] == 0`).
+* KL3: if there is a preceding vehicle (`trafficInfo[1][0] == 0 && trafficInfo[1][1] == 0`), a right lane is available (`trafficInfo[2][0] != -1`), no vehicle on the right ahead of the ego vehicle (`trafficInfo[2][0] == 0 && trafficInfo[2][1] == 0`), and KL2 is `false`.
+* PLCL1: if PLCL2 is `false`
+* PLCL2: if there is no vehicle on left/right lane (`trafficInfo[0][0] == 0  && trafficInfo[0][1] == 0 && trafficInfo[0][2] == 0`).
+* PLCR1: if PLCR2 is `false`
+* PLCR2: if there is no vehicle on the right lane (`trafficInfo[2][0] == 0  && trafficInfo[2][1] == 0 && trafficInfo[2][2] == 0`).
+* LCL1: if LCL2 is `false`
+* LCL2: if lane change behavior is completed.
+* LCR1: if LCR2 is `false`
+* LCR2: if lane change behavior is completed.
+
+As explained above, state transitions in my approach is simple and deterministic.
+
+### Calculating information required for the next movement
+
+In the step 2, I calcualted information required for the next movement.
+
+### Generating trajectory 
+
+In the step 3, 
