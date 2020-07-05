@@ -147,43 +147,51 @@ A well written README file can enhance your project and portfolio.  Develop your
 
 ## Model Documentation
 
-I generated paths by the following steps:
+I generated paths by the following two steps: 
 
-1. Selecting a next state with Finite State Machine
-2. Calculating information required to realize the movement in the next state
-3. Generating a final trajectory based on the information calculated in the above step 2
+1. Changing a state using Finite State Machine.
+2. Generating a trajectory based on the state changed in the above step.
 
-### Selecting a Next State with FSM
+Details of these two steps are described in the following sub sections.
 
-In the step 1, I defined 5 states: KL (Keep Lane), PLCL (Prepare Lane Change Left), LCL(Lane Change Left), PLCR (Prepare Lane Change Right), and LCR (Lane Change Right). I used Finite State Machine and traffic information around the ego vehicle to make transitions between these states. The following image shows the concept of traffic information in my submission code. 
+### Changing a state using Finite State Machine
+
+I defined 5 behavior states: KL (Keep Lane), PLCL (Prepare Lane Change Left), LCL(Lane Change Left), PLCR (Prepare Lane Change Right), and LCR (Lane Change Right). I used Finite State Machine and traffic information around the ego vehicle to make transitions between these states. The following image shows the concept of traffic information in my submission code. 
 
 ![Traffic information](images/trafficinfo.png)
 
-In every simulation tick (0.02 simulation seconds), traffic information (3x3 matrix in the above image) is calculated based on `sensor_fusion` information. In this traffic information, rows represent `s` ranges in Frenet coordinates, and columns are `d` ranges (or lanes), and values represent other vehicle's identifiers. You can find the concrete implementation in 
-`getSurroundingVehicleInformation` of `src/path_planner.cpp`. 
+In every simulation tick (0.02 simulation seconds), traffic information (3x3 matrix in the above image) is calculated based on `sensor_fusion` information. In this traffic information, rows represent `s` ranges in Frenet coordinates, and columns are `d` ranges (or lanes), and values represent other vehicle's identifiers. More details about traffic information can be found in the `getSurroundingVehicleInformation` method in `src/path_planner.cpp`. 
 
 ![Finite State Machine](images/fsm.png)
 
-As shown in the image shown above, state transitions are defined with Finite State Machine. Each circle represents state, and arrows between states show the relationship between each states.
+As shown in the image shown above, I defined transition rules with Finite State Machine. Each circle represents state, and arrows between states show the relationship between each states.
 
-* KL1: if Both KL2 and KL3 are `false`.
-* KL2: if there is a preceding vehicle (`trafficInfo[1][0] == 0 && trafficInfo[1][1] == 0`), a left lane is available (`trafficInfo[0][0] != -1`), and no vehicle on the left ahead of the ego vehicle (`trafficInfo[0][0] == 0 && trafficInfo[0][1] == 0`).
-* KL3: if there is a preceding vehicle (`trafficInfo[1][0] == 0 && trafficInfo[1][1] == 0`), a right lane is available (`trafficInfo[2][0] != -1`), no vehicle on the right ahead of the ego vehicle (`trafficInfo[2][0] == 0 && trafficInfo[2][1] == 0`), and KL2 is `false`.
-* PLCL1: if PLCL2 is `false`
-* PLCL2: if there is no vehicle on left/right lane (`trafficInfo[0][0] == 0  && trafficInfo[0][1] == 0 && trafficInfo[0][2] == 0`).
-* PLCR1: if PLCR2 is `false`
-* PLCR2: if there is no vehicle on the right lane (`trafficInfo[2][0] == 0  && trafficInfo[2][1] == 0 && trafficInfo[2][2] == 0`).
-* LCL1: if LCL2 is `false`
-* LCL2: if lane change behavior is completed.
-* LCR1: if LCR2 is `false`
-* LCR2: if lane change behavior is completed.
+#### Keep Lane State
 
-As explained above, state transitions in my approach is simple and deterministic.
+During KL state, the ego is supposed to keep the current lane and acclerate until the max velocity. I set 48 MPH for max velocity, which is slightly less than the speed limit (50 MPH) in this assignment. However, when another vehicle is running ahead of the ego vehicle, the ego will decelerate as the velocity of the ego will become slightly (-0.2 MPS) less than the preceding vehicle. To reduce higher jerk when adjusting the ego velocity to the precdeing vehicle, I set maximum deceleration as 3.67 MPS while maximum acceleration as 5.45 MPS. 
 
-### Calculating information required for the next movement
+My program checks four conditions to make a transition from KL to PLCL. It checks (1) if ego velocity is faster than 30 MPH, (2) if there is a preceding vehicle: `trafficInfo[1][0] == 0 && trafficInfo[1][1] == 0`, (3) if the left lane of the ego is available: `trafficInfo[0][0] != -1`, and (4) if no vehicles are running ahead on the left lane: `trafficInfo[1][0] == 0 && trafficInfo[1][1] == 0`. If all conditions are met, then ego state will be changed to PLCL. This transition is described as KL2 in the above figure.
 
-In the step 2, I calcualted information required for the next movement.
+My program check similar conditions for PLCR. It checks the right lane instead of the left: `trafficInfo[2][x], x= {0,1}`. This transition is described as KL3 in the above figure. Note that my program is simple and deterministic, so if both conditions for KL2 and KL3 are met, then the state will be changed to PLCL everytime. If neither KL2 nor KL3 are met, then KL state will be continued. This transition is described as KL1 in the above figure. More details about KL state behavior can be found in `getNextStateKL` method in L142-L165 of `path_planner.cpp`.
 
-### Generating trajectory 
+#### Prepare Lane Change (Left/Right) State
 
-In the step 3, 
+During PLCL or PLCR state, the ego is supposed to check the next lane and change it's velocity according to the next lane traffic. However, my submission code doesn't accelerate and decelerate based on the traffic on the next lane because I carefully set the coverage of traffic information so that acceleration and deceleratin won't be needed before change lane. So, in the current implementation, the movement of the ego in PLCL and PLCR is exactly the same as KL state.
+
+My program checks one condition to make a transition from PLCL(or PLCR) to LCL(or LCR). It checks if no vehicles are running on the next lane: (`trafficInfo[next_lane][0] == 0 && trafficInfo[next_lane][1] == 0 && trafficInfo[next_lane][2] == 0`). This rule is shown as PLCL2 (or PLCR2) in the above figure. If PLCL1 (or PLCR1) is not met, then state will be back to KL. This rule is shown as PLCL1 (or PLCR2). Interested reader can find more details in `getNextStatePLCL` and `getNextStatePLCR` methods in L167 to L207 in `path_planner.cpp`.
+
+#### Lane Change (Left/Right) State
+
+During LCL or LCR state, the ego is supposed to change the lane to the left or right, and it's velocity will be changed according to the target lane. Note that my submission code doesn't suppose another vehicle's cut-in to the target lane, so the ego keeps changing lane even if another vehicle cut-in to the target lane at the same time. This situation should be taken care of in a real AV developments, and such scenarios shuold be carefully covered in development phases.
+
+My program checks one condition to make a transition from LCL (or LCR) to KL. It checks if the ego vehicle is running around the center of the target lane with `isLaneChangeCompleted` method defined in `path_planner.cpp`. This rule is shown as LCL2 (or LCR2) in the above figure. Otherwise, LCL (or LCR) state will be continued, which is shown as LCL1 (or LCR1) in the above figure. You can find more details in `getNextStateLCL` and `getNextStateLCR` methods in L209 to L232 in `path_planner.cpp`
+
+### Generating a trajectory based on the state changed in the above step
+
+I generated a trajectory based on the implementation introduced in "Project Q & A" section of this assignment. The implementation estimates spline in cartesian coordinate system using the last two point in the `previous_path_x` and `previous_path_y`, and three points which are generated from `(ego.s+30, target_lane), (ego.s+60, target_lane), (ego.s+90, target_lane)` points defined in Frenet coordinate system. Then it updates trajectory by adding additional points using spline so that trajectory will match the `target_velocity`.
+
+In the previous paragraph, I just explained existing implementation, and I was able to generate trajectory just changing `target_lane` and `target_velocity`. However, it turns out generated trajectories from the implementation sometimes violates maximum jerk during lane change. To avoid such cases, I changed s coordinates of the reference points which are used for spline estimation. As you can find in L94 to L99 in `vehicle.cpp`, I am using `(ego.s+60, target_lane), (ego.s+80, target_lane), (ego.s+100, target_lane)` instead of the default values, which means required distance to change lane will be doubled. This change worked well because I only allow the ego to change lane when it's velocity is above 30 MPH (takes about 4.5 seconds to run 60 meters).
+
+### Reflection
+
+While I was tackling to this assignment, I tried to put everything I learned from this module to the implementation. However, it was really hard to control ego's behavior with several cost function and their weights. In addition, I wasn't able to figure out the right way to generate seemless trajectories with JMT function introduced in the section "trajectory generation". I literally spent many hours on utilizing JMT function, but never succeeded. Now I want to know what is the right & modern approach to put everything together into one AV stack in a coherent way.

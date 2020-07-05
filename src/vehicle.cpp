@@ -91,11 +91,11 @@ void Vehicle::generateTrajectory(
     points_y.push_back(ref_y);
   }
 
-  vector<double> next_wp0 = getXY(this->s+40, (2+4*target_lane), this->map_waypoints_s,
+  vector<double> next_wp0 = getXY(this->s+60, (2+4*target_lane), this->map_waypoints_s,
                                   this->map_waypoints_x, this->map_waypoints_y);
-  vector<double> next_wp1 = getXY(this->s+60, (2+4*target_lane), this->map_waypoints_s,
+  vector<double> next_wp1 = getXY(this->s+80, (2+4*target_lane), this->map_waypoints_s,
                                   this->map_waypoints_x, this->map_waypoints_y);
-  vector<double> next_wp2 = getXY(this->s+90, (2+4*target_lane), this->map_waypoints_s,
+  vector<double> next_wp2 = getXY(this->s+100, (2+4*target_lane), this->map_waypoints_s,
                                   this->map_waypoints_x, this->map_waypoints_y);
 
   points_x.push_back(next_wp0[0]);

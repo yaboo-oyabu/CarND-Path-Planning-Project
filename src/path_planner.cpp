@@ -42,60 +42,74 @@ void PathPlanner::generateTrajectory(
     State &curr_state, int &curr_lane, double &curr_vel,
     vector<double> &next_x_vals, vector<double> &next_y_vals) {
 
-  State next_state = this->getNextState(curr_state, curr_lane);
+  // Update curr_state and curr_lane;
+  this->changeState(curr_state, curr_lane);
 
   int next_lane;
   double next_vel;
 
-  switch(next_state) {
+  switch(curr_state) {
     case KL:
-      execLaneKeep(next_state, curr_lane, curr_vel, next_lane, next_vel);
+      execLaneKeep(curr_state, curr_lane, curr_vel, next_lane, next_vel);
       break;
     case PLCL:
-      prepLaneChange(next_state, curr_lane, curr_vel, next_lane, next_vel);
+      prepLaneChange(curr_state, curr_lane, curr_vel, next_lane, next_vel);
       break;
     case LCL:
-      execLaneChange(next_state, curr_lane, curr_vel, next_lane, next_vel);
+      execLaneChange(curr_state, curr_lane, curr_vel, next_lane, next_vel);
       break;
     case PLCR:
-      prepLaneChange(next_state, curr_lane, curr_vel, next_lane, next_vel);
+      prepLaneChange(curr_state, curr_lane, curr_vel, next_lane, next_vel);
       break;
     case LCR:
-      execLaneChange(next_state, curr_lane, curr_vel, next_lane, next_vel);
+      execLaneChange(curr_state, curr_lane, curr_vel, next_lane, next_vel);
       break;
   }
 
   this->ego.generateTrajectory(next_lane, next_vel, next_x_vals, next_y_vals);
-  curr_state = next_state;
-  curr_lane = next_lane;
   curr_vel = next_vel;
 }
 
-State PathPlanner::getNextState(
-    const State curr_state, const int curr_lane) {
+void PathPlanner::changeState(State &curr_state, int &curr_lane) {
   // Returns possible states based on current lane and state.
   State next_state;
-  vector< vector<int> > spaces = getSurroundingVehicleInformation(curr_lane);
+  int next_lane;
+
+  vector< vector<int> > spaces;
 
   switch(curr_state) {
     case KL:
+      next_lane = curr_lane;
+      spaces = getSurroundingVehicleInformation(next_lane);
       next_state = getNextStateKL(spaces);
       break;
     case PLCL:
+      next_lane = curr_lane;
+      spaces = getSurroundingVehicleInformation(next_lane);
       next_state = getNextStatePLCL(spaces);
       break;
-    case LCL:
-      next_state = getNextStateLCL(spaces, curr_lane);
-      break;
     case PLCR:
+      next_lane = curr_lane;
+      spaces = getSurroundingVehicleInformation(next_lane);
       next_state = getNextStatePLCR(spaces);
       break;
-    case LCR:
-      next_state = getNextStateLCR(spaces, curr_lane);
+    case LCL:
+      next_lane = curr_lane + lane_direction[curr_state];
+      spaces = getSurroundingVehicleInformation(next_lane);
+      next_state = getNextStateLCL(spaces, next_lane, curr_lane);
       break;
+    case LCR:
+      next_lane = curr_lane + lane_direction[curr_state];
+      spaces = getSurroundingVehicleInformation(next_lane);
+      next_state = getNextStateLCR(spaces, next_lane, curr_lane);
+      break;
+    default:
+      next_state = KL;
   }
 
-  return next_state;
+  // Debug output
+  std::cout << "curr_state: " << curr_state << ", next_state: " << next_state << std::endl;
+  curr_state = next_state;
 }
 
 vector< vector<int> > PathPlanner::getSurroundingVehicleInformation(int curr_lane) {
@@ -116,12 +130,12 @@ vector< vector<int> > PathPlanner::getSurroundingVehicleInformation(int curr_lan
   }
 
   // For Debug information;
-  // for (int i = 0; i < spaces.size(); i++){
-  //   for (int j = 0; j < spaces[0].size(); j++) {
-  //     std::cout << std::setw(3) << spaces[i][j];
-  //   }
-  //   std::cout << std::endl;
-  // }
+  for (int i = 0; i < spaces.size(); i++){
+    for (int j = 0; j < spaces[0].size(); j++) {
+      std::cout << std::setw(3) << spaces[i][j];
+    }
+    std::cout << std::endl;
+  }
   return spaces;
 } 
 
@@ -192,34 +206,28 @@ State PathPlanner::getNextStatePLCR(const vector< vector<int> > &spaces) {
   return next_state;
 }
 
-State PathPlanner::getNextStateLCL(const vector< vector<int> > &spaces, const int curr_lane) {
+State PathPlanner::getNextStateLCL(
+    const vector< vector<int> > &spaces, const int next_lane, int &curr_lane) {
   State next_state;
   // Vehicles on the first or the second row of the left lane.
-  if (!(spaces[0][0] == 0 && spaces[1][0] == 0)) {
-    next_state = PLCL;
+  if (isLaneChangeCompleted(next_lane)) {
+    next_state = KL;
+    curr_lane = next_lane;
   } else {
-    int next_lane = curr_lane - 1;
-    if (isLaneChangeCompleted(next_lane)) {
-      next_state = KL;
-    } else {
-      next_state = LCL;
-    }
+    next_state = LCL;
   }
   return next_state;
 }
 
-State PathPlanner::getNextStateLCR(const vector< vector<int> > &spaces, const int curr_lane) {
+State PathPlanner::getNextStateLCR(
+    const vector< vector<int> > &spaces, const int next_lane, int &curr_lane) {
   State next_state;
   // Vehicles on the first or the second row of the left lane.
-  if (!(spaces[0][2] == 0 && spaces[1][2] == 0)) {
-    next_state = PLCR;
+  if (isLaneChangeCompleted(next_lane)) {
+    next_state = KL;
+    curr_lane = next_lane;
   } else {
-    int next_lane = curr_lane + 1;
-    if (isLaneChangeCompleted(next_lane)) {
-      next_state = KL;
-    } else {
-      next_state = LCR;
-    }
+    next_state = LCR;
   }
   return next_state;
 }
@@ -249,19 +257,20 @@ void PathPlanner::prepLaneChange(
     int &next_lane, double &next_velocity) {
   // lane_detection["PLCR"] = 1
   next_lane = curr_lane;
+  getKinematics(curr_lane, curr_velocity, next_velocity);
 
   // calculate new velocity.
-  double curr_lane_new_velocity;
-  double next_lane_new_velocity;
-  getKinematics(curr_lane, curr_velocity, curr_lane_new_velocity);
-  getKinematics(next_lane, curr_velocity, next_lane_new_velocity);
+  // double curr_lane_new_velocity;
+  // double next_lane_new_velocity;
+  // getKinematics(curr_lane, curr_velocity, curr_lane_new_velocity);
+  // getKinematics(next_lane, curr_velocity, next_lane_new_velocity);
   
   // choose faster lane
-  if (next_lane_new_velocity > curr_lane_new_velocity) {
-    next_velocity = next_lane_new_velocity;
-  } else {
-    next_velocity = curr_lane_new_velocity;
-  }
+  // if (next_lane_new_velocity > curr_lane_new_velocity) {
+  //   next_velocity = next_lane_new_velocity;
+  // } else {
+  //   next_velocity = curr_lane_new_velocity;
+  // }
 }
 
 void PathPlanner::execLaneChange(
@@ -270,6 +279,11 @@ void PathPlanner::execLaneChange(
   // lane_detection["LCR"] = 1
   next_lane = curr_lane + lane_direction[curr_state];
   getKinematics(next_lane, curr_velocity, next_velocity);
+
+  // don't accelerate during change lane to reduce jerk.
+  if (next_velocity > curr_velocity) {
+    next_velocity = curr_velocity;
+  }
 }
 
 void PathPlanner::getKinematics(
@@ -291,6 +305,12 @@ void PathPlanner::getKinematics(
   } else {
     double ado_velocity = vehicles[ado_id].getVel();
     double relative_velocity = ado_velocity - curr_velocity;
+
+    // keep distance to the preceding vehicle around 20 meters
+    if (vehicles[ado_id].getS() - this->ego.getS() < 20) {
+      relative_velocity -= 1;
+    }
+
     if (relative_velocity > 0) {
       next_velocity = min(max_velocity, kMaxVelMps);
     } else {

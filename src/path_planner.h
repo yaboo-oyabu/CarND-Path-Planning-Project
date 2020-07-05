@@ -54,14 +54,12 @@ class PathPlanner {
   vector< vector<int> > getSurroundingVehicleInformation(int curr_lane);
 
   // Determine next state.
-  State getNextState(const State curr_state, const int curr_lane);
+  void changeState(State &curr_state, int &curr_lane);
   State getNextStateKL(const vector< vector<int> > &spaces);
   State getNextStatePLCL(const vector< vector<int> > &spaces);
   State getNextStatePLCR(const vector< vector<int> > &spaces);
-  State getNextStatePLCX(const vector< vector<int> > &spaces,
-                         int relative_lane, State maybe_state);
-  State getNextStateLCL(const vector< vector<int> > &spaces, const int curr_lane);
-  State getNextStateLCR(const vector< vector<int> > &spaces, const int curr_lane);
+  State getNextStateLCL(const vector< vector<int> > &spaces, const int next_lane, int &curr_lane);
+  State getNextStateLCR(const vector< vector<int> > &spaces, const int next_lane, int &curr_lane);
   bool isLaneChangeCompleted(int next_lane);
 
   // Determine next velocity.
